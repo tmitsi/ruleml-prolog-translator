@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Prolog <-> RuleML Bidirectional Translator</title>
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/1.0.2/css/bulma.min.css" integrity="sha512-RpeJZX3aH5oZN3U3JhE7Sd+HG8XQsqmP3clIbu4G28p668yNsRNj3zMASKe1ATjl/W80wuEtCx2dFA8xaebG5w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/codemirror.min.css" integrity="sha512-uf06llspW44/LZpHzHT6qBOIVODjWtv4MxCricRxkzvopAlSWnTf6hpZTFxuuZcuNE9CBQhqE0Seu1CoRk84nQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+	<link href="data:image/x-icon;base64,AAABAAEAEBAAAAEAIABoBAAAFgAAACgAAAAQAAAAIAAAAAEAIAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGZcg/8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABmXIP/ZlyDtwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAZlyD/2Zcg/8AAAAAZlyDt2Zcg/8AAAAAAAAAAAAAAABmXIP/ZlyD/wAAAAAAAAAAAAAAAAAAAAAAAAAAZlyD/2Zcg/8AAAAAAAAAAAAAAABmXIP/AAAAAAAAAAAAAAAAAAAAAGZcg/9mXIP/AAAAAAAAAAAAAAAAZlyD/2Zcg/8AAAAAAAAAAAAAAAAAAAAAZlyD/wAAAAAAAAAAAAAAAAAAAAAAAAAAZlyD/2Zcg/8AAAAAZlyD/2Zcg/8AAAAAAAAAAAAAAAAAAAAAAAAAAGZcg/9mXIO3AAAAAAAAAAAAAAAAAAAAAAAAAABmXIP/ZlyD/2Zcg/9mXIP/AAAAAAAAAAAAAAAAAAAAAAAAAABmXIO3ZlyD/wAAAAAAAAAAAAAAAAAAAAAAAAAAZlyD/2Zcg/8AAAAAZlyD/2Zcg/8AAAAAAAAAAAAAAAAAAAAAAAAAAGZcg/8AAAAAAAAAAAAAAAAAAAAAZlyD/2Zcg/8AAAAAAAAAAAAAAABmXIP/ZlyD/wAAAAAAAAAAAAAAAAAAAABmXIP/AAAAAAAAAAAAAAAAZlyD/2Zcg/8AAAAAAAAAAAAAAAAAAAAAAAAAAGZcg/9mXIP/AAAAAAAAAAAAAAAAZlyD/2Zcg7cAAAAAZlyD/2Zcg/8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGZcg7dmXIP/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAZlyD/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//8AAP//AAD9/wAA/P8AAOTnAADO8wAAnvkAAD58AAA+fAAAn3kAAM9zAADnJwAA/z8AAP+/AAD//wAA//8AAA==" rel="icon" type="image/x-icon">
+	<style>
+		body {
+			padding: 2em;
+			height: 100%;
+			width: 100%;
+			margin: 0;
+			box-sizing: border-box;
+		}
+		.container {
+			width: 90%;
+			height: 90%;
+			margin: 0 auto;
+			display: flex;
+			flex-direction: column;
+		}
+		.translator-container {
+			display: flex;
+			justify-content: space-between;
+			align-items: stretch;
+			flex: 1;
+			margin-bottom: 1em;
+		}
+		.translator-column {
+			width: 45%;
+			height: 100%;
+			margin: 0 1em;
+			flex: none;
+		}
+		.middle-column {
+			width: 10%;
+			display: grid;
+			/*flex-direction: column;*/
+			justify-content: center;
+			align-items: center;
+			margin: 0 1em;
+		}
+		textarea {
+			width: 100%;
+			box-sizing: border-box;
+			flex-grow: 1;
+		}
+		.query-container {
+			margin-top: 1em;
+			flex-grow: 1;
+		}
+		.buttons {
+			display: flex;
+			flex-direction: column;
+			justify-content: center;
+			align-items: center;
+		}
+		.error-message {
+			color: red;
+			margin-top: 1em;
+		}
+		.CodeMirror {
+			border: 2px solid #ccc;
+			border-radius: 6px;
+			flex-grow: 1;
+		}
+
+		.arrow-right {
+			position: relative;
+			padding-right: 2rem;
+		}
+
+		.arrow-right::after {
+			content: "";
+			position: absolute;
+			top: 50%;
+			right: 1rem;
+			margin-top: -0.5rem;
+			border-top: 0.5rem solid transparent;
+			border-bottom: 0.5rem solid transparent;
+			border-left: 0.5rem solid white;
+		}
+
+		.arrow-left {
+			position: relative;
+			padding-left: 2rem;
+		}
+
+		.arrow-left::before {
+			content: "";
+			position: absolute;
+			top: 50%;
+			left: 1rem;
+			margin-top: -0.5rem;
+			border-top: 0.5rem solid transparent;
+			border-bottom: 0.5rem solid transparent;
+			border-right: 0.5rem solid white;
+		}
+
+
+
+	</style>
+</head>
+<body>
+<section class="section">
+	<div class="container">
+		<h1 class="title">Prolog <-> RuleML Bidirectional Translator</h1>
+		<div class="translator-container">
+			<div class="translator-column">
+				<label class="label">Prolog KB</label>
+				<textarea id="prologText" class="textarea"></textarea>
+				<div class="query-container">
+					<label class="label">Prolog Queries</label>
+					<textarea id="queriesText" class="textarea"></textarea>
+				</div>
+			</div>
+			<div class="middle-column">
+				<div class="buttons">
+					<button id="toRuleML" class="button is-responsive is-primary arrow-right">to RuleML</button>
+					<button id="toProlog" class="button is-responsive is-link arrow-left">to Prolog</button>
+					<button id="exampleButton" class="button is-responsive is-info">Example</button>
+				</div>
+			</div>
+			<div class="translator-column">
+				<label class="label">RuleML</label>
+				<textarea id="ruleMLText" class="textarea"></textarea>
+			</div>
+		</div>
+		<div id="errorMessage" class="error-message"></div>
+	</div>
+</section>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/codemirror.min.js" integrity="sha512-8RnEqURPUc5aqFEN04aQEiPlSAdE0jlFS/9iGgUyNtwFnSKCXhmB6ZTNl7LnDtDWKabJIASzXrzD0K+LYexU9g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/mode/xml/xml.min.js" integrity="sha512-LarNmzVokUmcA7aUDtqZ6oTS+YXmUKzpGdm8DxC46A6AHu+PQiYCUlwEGWidjVYMo/QXZMFMIadZtrkfApYp/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/addon/edit/matchbrackets.min.js" integrity="sha512-GSYCbN/le5gNmfAWVEjg1tKnOH7ilK6xCLgA7c48IReoIR2g2vldxTM6kZlN6o3VtWIe6fHu/qhwxIt11J8EBA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/addon/selection/active-line.min.js" integrity="sha512-0sDhEPgX5DsfNcL5ty4kP6tR8H2vPkn40GwA0RYTshkbksURAlsRVnG4ECPPBQh7ZYU6S3rGvp5uhlGQUNrcmA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/addon/search/match-highlighter.min.js" integrity="sha512-94h/nzerPpLt9vsOyZmNNemwyUESYD/Tnuem6b67+RQMETNFhH8pTCHLDZkGNhzEbmKO0AidJgS0aYH1mH9YfA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<style>
+	.cm-prolog-variable { color: #b4351f; font-weight: bold;} /* Variables */
+	.cm-prolog-predicate { color: #000000; } /* Predicates */
+	.cm-prolog-atom { color: #7a270e; } /* Simple atoms */
+	.cm-prolog-nested-predicate { font-style: italic; } /* Italics for nested predicates */
+	.cm-prolog-keyword { color: #d62728; font-weight: bold; } /* Keywords */
+	.cm-prolog-string { color: #2ca02c; } /* Strings - Green */
+	.cm-prolog-comment { color: #808080; font-style: italic; } /* Comments - Gray, italic */
+	.cm-prolog-operator { color: #9467bd; font-weight: bold; } /* Operators - Purple, bold */
+
+	.cm-matchhighlight {
+		background: lightgrey !important
+	}
+</style>
+<script>
+	CodeMirror.defineMode("prolog", function() {
+		const keywords = /^(is|true|fail|assert|retract|abolish|dynamic|repeat|halt|call)(?=\W|$)/;
+		const variables = /^[A-Z_][a-zA-Z0-9_]*/;
+		const simpleAtoms = /^[a-z][a-zA-Z0-9_]*\b(?!\()/; // Simple atoms
+		const predicates = /^[a-z][a-zA-Z0-9_]*\s*(?=\()/; // Predicates
+		const operators = /^(:-|\\+|,|\||;|\.|\?|\!|[-+*/]|=|==|\\=|\\==|<|<=|>=|>|\\+)/;
+		const brackets = /^[\(\)\[\]\{\}]/;
+
+		return {
+			startState: function() {
+				return {
+					inString: false,
+					inComment: false,
+					blockComment: false,
+					stringChar: null,
+					nesting: 0,
+					inPredicate: false
+				};
+			},
+			token: function(stream, state) {
+				if (state.blockComment) {
+					if (stream.match('*/')) {
+						state.blockComment = false;
+					} else {
+						stream.skipToEnd();
+					}
+					return "prolog-comment";
+				}
+
+				if (stream.match('%')) {
+					stream.skipToEnd();
+					return "prolog-comment";
+				}
+
+				// Handle block comment start
+				if (stream.match('/*')) {
+					state.blockComment = true;
+					return "prolog-comment";
+				}
+
+				if (!state.inString && (stream.match("'") || stream.match('"'))) {
+					state.inString = true;
+					state.stringChar = stream.current();
+					return "prolog-string";
+				}
+				if (state.inString) {
+					if (stream.skipTo(state.stringChar)) {
+						stream.next();
+						state.inString = false;
+						state.stringChar = null;
+					} else {
+						stream.skipToEnd();
+					}
+					return "prolog-string";
+				}
+
+				if (stream.match(operators)) {
+					return "prolog-operator";
+				}
+
+				if (stream.match(keywords)) {
+					return "prolog-keyword";
+				}
+
+				if (stream.match(variables)) {
+					return "prolog-variable";
+				}
+
+				if (stream.match(brackets)) {
+					if (stream.current() === '(' || stream.current() === '[' || stream.current() === '{') {
+						state.nesting++;
+						state.inPredicate = true;
+					} else if (stream.current() === ')' || stream.current() === ']' || stream.current() === '}') {
+						state.nesting--;
+						if (state.nesting === 0) {
+							state.inPredicate = false;
+						}
+					}
+					return "prolog-bracket";
+				}
+
+				if (stream.match(predicates)) {
+					if (state.nesting > 0) {
+						return "prolog-predicate prolog-nested-predicate";
+					} else {
+						return "prolog-predicate";
+					}
+				}
+
+				if (stream.match(simpleAtoms)) {
+					return "prolog-atom";
+				}
+
+				stream.next();
+				return null;
+			}
+		};
+	});
+
+
+	function setEditorSizes() {
+		const containerHeight = document.querySelector('.translator-column').clientHeight;
+		const prologEditorHeight = (containerHeight * 0.6) - 10;
+		const queryEditorHeight = (containerHeight * 0.2) - 10;
+		const ruleMLEditorHeight = (containerHeight * 0.85);
+
+		prologEditor.setSize(null, prologEditorHeight);
+		prologQEditor.setSize(null, queryEditorHeight);
+		ruleMLEditor.setSize(null, ruleMLEditorHeight);
+	}
+
+
+	const prologKB =  '% Enter your Prolog KB here'
+	const prologQuery = '% Enter your Prolog queries here'
+	const ruleMLDocument = '<!-- Enter the RuleML document here -->'
+
+	const prologKBExample = '% Example from https://swish.swi-prolog.org/example/lists.pl\n' +
+			'\n' +
+			'suffix(Xs, Ys) :-\n' +
+			'    append(_, Ys, Xs).\n' +
+			'\n' +
+			'prefix(Xs, Ys) :-\n' +
+			'    append(Ys, _, Xs).\n' +
+			'\n' +
+			'sublist(Xs, Ys) :-\n' +
+			'    suffix(Xs, Zs),\n' +
+			'    prefix(Zs, Ys).\n' +
+			'\n' +
+			'nrev([], []).\n' +
+			'nrev([H|T0], L) :-\n' +
+			'\tnrev(T0, T),\n' +
+			'\tappend(T, [H], L).\n'
+
+	const prologQueryExample = '% queries\n' +
+			'?- sublist([a, b, c, d, e], [c, d]).\n' +
+			'?- sublist([a, b, c, d, e], Ys).\n' +
+			'?- sublist(Xs, Ys).\n' +
+			'\n' +
+			'?- numlist(1, 1000, _L), time(nrev(_L, _)).'
+
+	let prologEditor = CodeMirror.fromTextArea(document.getElementById('prologText'), {
+		lineNumbers: true,
+		mode: 'prolog',
+		matchBrackets: true,
+		styleActiveLine: true,
+		highlightSelectionMatches: {
+			minChars: 2,
+			showToken: /\w/,
+			style:'matchhighlight',
+			annotateScrollbar: true
+		}
+	});
+	prologEditor.setValue(prologKB)
+
+
+	let prologQEditor = CodeMirror.fromTextArea(document.getElementById('queriesText'), {
+		lineNumbers: true,
+		mode: 'prolog',
+		matchBrackets: true,
+		styleActiveLine: true,
+		highlightSelectionMatches: {
+			minChars: 2,
+			showToken: /\w/,
+			style:'matchhighlight',
+			annotateScrollbar: true
+		}
+	});
+	prologQEditor.setValue(prologQuery);
+
+	let ruleMLEditor = CodeMirror.fromTextArea(document.getElementById('ruleMLText'), {
+		lineNumbers: true,
+		mode: 'xml',
+		styleActiveLine: true,
+		highlightSelectionMatches: {
+			minChars: 2,
+			showToken: /\w/,
+			style:'matchhighlight',
+			annotateScrollbar: true
+		}
+	});
+	ruleMLEditor.setValue(ruleMLDocument)
+
+	setEditorSizes();
+
+	window.addEventListener('resize', setEditorSizes);
+
+	document.getElementById('toRuleML').addEventListener('click', async () => {
+		const kb = prologEditor.getValue();
+		const queries = prologQEditor.getValue();
+		try {
+			const response = await fetch(`/toRuleML?kb=${encodeURIComponent(kb)}&queries=${encodeURIComponent(queries)}&pprint=true`);
+			const result = await response.json();
+			if (result.xml) {
+				ruleMLEditor.setValue(result.xml);
+			}
+			if (result.messages) {
+				document.getElementById('errorMessage').innerText = result.messages;
+			} else {
+				document.getElementById('errorMessage').innerText = '';
+			}
+		} catch (error) {
+			document.getElementById('errorMessage').innerText = 'Error translating to RuleML';
+		}
+	});
+
+	document.getElementById('toProlog').addEventListener('click', async () => {
+		const ruleMLText = ruleMLEditor.getValue();
+		try {
+			const response = await fetch(`/toProlog?ruleMLText=${encodeURIComponent(ruleMLText)}`);
+			const result = await response.json();
+			if (result.kb) {
+				prologEditor.setValue(result.kb);
+			}
+			else {
+				prologEditor.setValue("");
+			}
+			if (result.queries) {
+				prologQEditor.setValue(result.queries);
+			}
+			else {
+				prologQEditor.setValue("");
+			}
+			if (result.messages) {
+				document.getElementById('errorMessage').innerText = result.messages;
+			} else {
+				document.getElementById('errorMessage').innerText = '';
+			}
+		} catch (error) {
+			document.getElementById('errorMessage').innerText = 'Error translating to Prolog';
+		}
+	});
+	document.getElementById('exampleButton').addEventListener('click', async () => {
+		prologEditor.setValue(prologKBExample);
+		prologQEditor.setValue(prologQueryExample);
+	});
+
+</script>
+</body>
+</html>
