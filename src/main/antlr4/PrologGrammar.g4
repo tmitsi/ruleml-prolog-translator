@@ -108,9 +108,9 @@ function
     ;
 
 equality
-    : (atom | variable | list | number | function) | ('(' (atom | variable | list | number | function) ')')
+    : ((atom | variable | list | number | function) | ('(' (atom | variable | list | number | function) ')'))
       '='
-      (atom | variable | list | number | function) | ('(' (atom | variable | list | number | function) ')')
+      ((atom | variable | list | number | function) | ('(' (atom | variable | list | number | function) ')'))
     ;
 
 arguments
@@ -184,7 +184,7 @@ HEX: '0x' HEX_DIGIT+ ;
 
 CHARACTER_CODE_CONSTANT: '0' '\'' SINGLE_QUOTED_CHARACTER ;
 
-FLOAT: DECIMAL '.' [0-9]* ( [eE] [+-] DECIMAL )? ;
+FLOAT: DECIMAL '.' [0-9]+ ( [eE] [+-] DECIMAL )? ;
 
 
 GRAPHIC_TOKEN: (GRAPHIC | '\\')+ ; // 6.4.2
