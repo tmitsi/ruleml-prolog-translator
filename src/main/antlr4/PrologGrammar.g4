@@ -94,7 +94,7 @@ disjunction
     ;
 
 naf
-: '\\+' ( compound_term | ('(' goal ')'))
+: '\\+' (naf | compound_term | ('(' goal ')'))
 ;
 
 compound_term
