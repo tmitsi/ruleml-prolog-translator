@@ -6,8 +6,6 @@ import org.ruleml.rulemlprologtranslator.generated.PrologGrammarBaseListener;
 import org.ruleml.rulemlprologtranslator.generated.PrologGrammarParser;
 import org.ruleml.rulemlprologtranslator.translators.errorhandling.ModeViolationException;
 
-import javax.xml.transform.ErrorListener;
-import java.util.List;
 
 public class PrologToXMLTranslator extends PrologGrammarBaseListener {
     private final StringBuilder sb;

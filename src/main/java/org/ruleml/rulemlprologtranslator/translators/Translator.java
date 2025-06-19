@@ -8,7 +8,6 @@ import org.ruleml.rulemlprologtranslator.generated.XMLParser;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.ruleml.rulemlprologtranslator.translators.errorhandling.ErrorAggregator;
-import org.ruleml.rulemlprologtranslator.translators.errorhandling.ModeViolationException;
 
 import java.io.File;
 import java.util.List;
@@ -26,18 +25,14 @@ public class Translator {
     }
 
     public String[] translateToXML(CharStream codePointCharStream, boolean prettyPrint) {
-        // create a lexer that feeds off of input CharStream
         PrologGrammarLexer lexer = new PrologGrammarLexer(codePointCharStream);
-        // create a buffer of tokens pulled from the lexer
         CommonTokenStream tokens = new CommonTokenStream(lexer);
-        // create a parser that feeds off the tokens buffer
         PrologGrammarParser parser = new PrologGrammarParser(tokens);
         parser.setQueryMode(queryMode);
         ErrorAggregator errorAggregator = new ErrorAggregator();
         parser.addErrorListener(errorAggregator);
         ParseTree tree = parser.document(); // begin parsing at init rule
 
-        // Create a generic parse tree walker that can trigger callbacks
         ParseTreeWalker walker = new ParseTreeWalker();
         // Walk the tree created during the parse, trigger callbacks
         PrologToXMLTranslator plt = new PrologToXMLTranslator(parser);
@@ -90,19 +85,14 @@ public class Translator {
     }
 
     public String[] translateToProlog(CharStream codePointCharStream) {
-        // create a lexer that feeds off of input CharStream
         XMLLexer lexer = new XMLLexer(codePointCharStream);
-        // create a buffer of tokens pulled from the lexer
         CommonTokenStream tokens = new CommonTokenStream(lexer);
-        // create a parser that feeds off the tokens buffer
         XMLParser parser = new XMLParser(tokens);
         ErrorAggregator errorAggregator = new ErrorAggregator();
         parser.addErrorListener(errorAggregator);
         ParseTree tree = parser.document(); // begin parsing at init rule
 
-        // Create a generic parse tree walker that can trigger callbacks
         ParseTreeWalker walker = new ParseTreeWalker();
-        // Walk the tree created during the parse, trigger callbacks
         XMLToPrologTranslator xml = new XMLToPrologTranslator();
         walker.walk(xml, tree);
         List<String> antlrErrors = errorAggregator.getErrorMessages();

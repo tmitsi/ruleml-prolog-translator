@@ -1,7 +1,7 @@
 /*
 BSD License
 
-Copyright (c) 2023 - 2024 Theodoros Mitsikas, Ralph Schäfermeier, Adrian Paschke
+Copyright (c) 2023 - 2025 Theodoros Mitsikas, Ralph Schäfermeier, Adrian Paschke
 Copyright (c) 2013, Tom Everett
 All rights reserved.
 
